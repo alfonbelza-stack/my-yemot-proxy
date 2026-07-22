@@ -47,7 +47,7 @@ app.get('/', (req, res) => {
     }
 
     // בניית התשובה לימות המשיח (עד 10 תוצאות)
-    let msg = results.length > 10 ? `נמצאו ${results.length} תוצאות. המערכת מקריאה את עשר הראשונות. ` : `נמצאו ${results.length} תוצאות. `;
+    let msg = results.length > 10 ? `נמצאו ${results.length} תוצאות המערכת מקריאה את עשר הראשונות ` : `נמצאו ${results.length} תוצאות `;
     const limit = Math.min(results.length, 10);
     
     for (let i = 0; i < limit; i++) {
@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
         const home = r[6] || "";
 
         // בניית נוסח ההקראה המדויק שביקשת
-        msg += `&t-תוצאה ${i+1}. ${title} ${name}. בן הרב ${son}. חתן ${law}. כתובת ${address}. מספר טלפון נייד ${mobile}. מספר טלפון בבית ${home}. `;
+        msg += `תוצאה ${i+1} ${title} ${name} בן הרב ${son} חתן ${law} כתובת ${address} מספר טלפון נייד ${mobile} מספר טלפון בבית ${home} `;
     }
 
     // הגדרת סוג התוכן ושליחת התשובה המהירה
