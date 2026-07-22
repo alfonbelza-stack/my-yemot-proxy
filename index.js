@@ -4,7 +4,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // הלינק של ה-Google Apps Script שלך
-const GOOGLE_SCRIPT_URL = "הדבק_כאן_את_הלינק_של_הסקריפט_שלך";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwkYRT1NhuUGYKDVNF4bgXaSQIXZwudCUMeXw3wF0siX_AXq4r3cgz9CEslzy_Or8nw/exec";
 
 app.get('/', async (req, res) => {
     try {
