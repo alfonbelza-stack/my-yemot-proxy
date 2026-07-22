@@ -11,11 +11,11 @@ app.get('/', async (req, res) => {
         // קבלת הערך שהמשתמש הקיש בטלפון
         const query = req.query.query || "";
         
-        // פנייה לגוגל סקריפט - שים לב שאנחנו שולחים פרמטרים קבועים לחיפוש כללי
+        // פנייה לגוגל סקריפט עם הפרמטרים הנכונים לפי הלינק שלך
         const response = await axios.get(GOOGLE_SCRIPT_URL, {
             params: {
+                action: "search", // הוספנו את זה לפי הלינק שלך
                 query: query,
-                type: "all", // חיפוש בהכל כפי שביקשת
                 callback: "none" 
             }
         });
