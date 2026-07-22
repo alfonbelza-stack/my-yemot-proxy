@@ -2,51 +2,61 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwkYRT1NhuUGYKDVNF4bgXaSQIXZwudCUMeXw3wF0siX_AXq4r3cgz9CEslzy_Or8nw/exec";
-let cachedData = []; // כאן נשמור את כל המאגר בזיכרון
+// הגדרות הגיליון שלך
+const SHEET_ID = "1aftoVF8eL2yXLITdXr2D3MKksZgJbBeXMPVgBgaxcZk";
+const SHEET_NAME = encodeURIComponent("וחי אחיך ל HTML");
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
 
-// פונקציה למשיכת הנתונים מגוגל לזיכרון של השרת
-async function refreshCache() {
+let cachedData = []; // המאגר המקומי בזיכרון השרת
+
+// פונקציה למשיכת הנתונים ישירות מהגיליון לזיכרון
+async function refreshData() {
     try {
-        console.log("מושך נתונים מגוגל...");
-        const response = await axios.get(GOOGLE_SCRIPT_URL + "?action=search&query=---"); // חיפוש ריק שמחזיר הכל
-        if (response.data && response.data.results) {
-            cachedData = response.data.results;
-            console.log(`המאגר עודכן: ${cachedData.length} רשומות.`);
-        }
+        const response = await axios.get(CSV_URL);
+        const rows = response.data.split('\n').map(row => {
+            // פירוק שורת ה-CSV לעמודות (טיפול במירכאות)
+            return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(col => col.replace(/"/g, '').trim());
+        });
+        
+        // הסרת שורת הכותרת ושמירה בזיכרון
+        cachedData = rows.slice(1); 
+        console.log(`הנתונים עודכנו: ${cachedData.length} שורות נלמדו.`);
     } catch (error) {
-        console.error("שגיאה בעדכון המאגר:", error.message);
+        console.error("שגיאה במשיכת הנתונים:", error.message);
     }
 }
 
-// עדכון המאגר מיד עם הפעלת השרת וכל 15 דקות
-refreshCache();
-setInterval(refreshCache, 15 * 60 * 1000);
+// עדכון ראשוני וכל 10 דקות
+refreshData();
+setInterval(refreshData, 10 * 60 * 1000);
 
 app.get('/', (req, res) => {
     const query = (req.query.query || "").trim().toLowerCase();
     
     if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש");
 
-    // חיפוש מהיר בתוך הזיכרון של השרת (ללא פנייה לגוגל!)
-    const results = cachedData.filter(item => {
-        const searchStr = `${item.name} ${item.son} ${item.law} ${item.address} ${item.mobile} ${item.home}`.toLowerCase();
-        return searchStr.includes(query);
+    // חיפוש מהיר בזיכרון השרת (לוקח מילי-שניות)
+    const results = cachedData.filter(row => {
+        // חיפוש בכל העמודות (A עד G)
+        const rowText = row.join(' ').toLowerCase();
+        return rowText.includes(query);
     });
 
     if (results.length === 0) {
         return res.send("id_list_message=t-לא נמצאו תוצאות");
     }
 
-    // בניית התשובה (עד 10 תוצאות)
-    let msg = results.length > 10 ? `נמצאו ${results.length} תוצאות. המערכת מקריאה עד 10 תוצאות. ` : `נמצאו ${results.length} תוצאות. `;
+    // בניית התשובה לימות המשיח (עד 10 תוצאות)
+    let msg = results.length > 10 ? `נמצאו ${results.length} תוצאות. המערכת מקריאה את עשר הראשונות. ` : `נמצאו ${results.length} תוצאות. `;
     const limit = Math.min(results.length, 10);
     
     for (let i = 0; i < limit; i++) {
         const r = results[i];
-        msg += `&t-תוצאה ${i+1}: ${r.name}. כתובת: ${r.address}. טלפון: ${r.mobile || r.home}. `;
+        // עמודות: A=0, B=1, C=2, D=3, E=4, F=5, G=6
+        msg += `&t-תוצאה ${i+1}. שם. ${r[1]}. בן. ${r[2]}. כתובת. ${r[4]}. טלפון. ${r[5] || r[6]}. `;
     }
 
+    res.set('Content-Type', 'text/plain; charset=utf-8');
     res.send("id_list_message=t-" + msg);
 });
 
