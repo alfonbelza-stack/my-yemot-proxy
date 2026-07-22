@@ -3,34 +3,52 @@ const axios = require('axios');
 const app = express();
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwkYRT1NhuUGYKDVNF4bgXaSQIXZwudCUMeXw3wF0siX_AXq4r3cgz9CEslzy_Or8nw/exec";
+let cachedData = []; // כאן נשמור את כל המאגר בזיכרון
 
-app.get('/', async (req, res) => {
-    // שליחת כותרת מיד כדי שימות המשיח ידעו שהשרת קיים
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+// פונקציה למשיכת הנתונים מגוגל לזיכרון של השרת
+async function refreshCache() {
+    try {
+        console.log("מושך נתונים מגוגל...");
+        const response = await axios.get(GOOGLE_SCRIPT_URL + "?action=search&query=---"); // חיפוש ריק שמחזיר הכל
+        if (response.data && response.data.results) {
+            cachedData = response.data.results;
+            console.log(`המאגר עודכן: ${cachedData.length} רשומות.`);
+        }
+    } catch (error) {
+        console.error("שגיאה בעדכון המאגר:", error.message);
+    }
+}
 
-    const query = req.query.query || "";
+// עדכון המאגר מיד עם הפעלת השרת וכל 15 דקות
+refreshCache();
+setInterval(refreshCache, 15 * 60 * 1000);
+
+app.get('/', (req, res) => {
+    const query = (req.query.query || "").trim().toLowerCase();
+    
     if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש");
 
-    try {
-        const response = await axios.get(GOOGLE_SCRIPT_URL, {
-            params: { action: "search", query: query },
-            timeout: 50000 
-        });
+    // חיפוש מהיר בתוך הזיכרון של השרת (ללא פנייה לגוגל!)
+    const results = cachedData.filter(item => {
+        const searchStr = `${item.name} ${item.son} ${item.law} ${item.address} ${item.mobile} ${item.home}`.toLowerCase();
+        return searchStr.includes(query);
+    });
 
-        let data = response.data.toString().trim();
-        
-        // ניקוי "read=t-" אם קיים והפיכה ל-id_list_message
-        data = data.replace(/^read=t-/, "");
-        
-        // בניית התשובה
-        const finalResponse = "id_list_message=t-" + data.split('&').join('&t-');
-        
-        res.send(finalResponse);
-
-    } catch (error) {
-        res.send("id_list_message=t-חלה שגיאה בחיבור למאגר הנתונים");
+    if (results.length === 0) {
+        return res.send("id_list_message=t-לא נמצאו תוצאות");
     }
+
+    // בניית התשובה (עד 10 תוצאות)
+    let msg = results.length > 10 ? `נמצאו ${results.length} תוצאות. המערכת מקריאה עד 10 תוצאות. ` : `נמצאו ${results.length} תוצאות. `;
+    const limit = Math.min(results.length, 10);
+    
+    for (let i = 0; i < limit; i++) {
+        const r = results[i];
+        msg += `&t-תוצאה ${i+1}: ${r.name}. כתובת: ${r.address}. טלפון: ${r.mobile || r.home}. `;
+    }
+
+    res.send("id_list_message=t-" + msg);
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running`));
+app.listen(PORT, () => console.log(`Server is running`));
