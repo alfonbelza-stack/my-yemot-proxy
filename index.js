@@ -35,18 +35,22 @@ app.get('/', (req, res) => {
 
     if (results.length === 0) return res.send("id_list_message=t-לא נמצאו תוצאות&");
 
-    // התחלת בניית המחרוזת בדיוק לפי הפורמט שלך
-    let responseText = `נמצאו ${results.length} תוצאות`;
+    // התחלת בניית הודעה אחת גדולה
+    let fullMessage = `נמצאו ${results.length} תוצאות. `;
 
-    const limit = Math.min(results.length, 10); 
+    // הגבלה ל-15 תוצאות כדי שההודעה לא תהיה ארוכה מדי ותיקטע על ידי המערכת
+    const limit = Math.min(results.length, 15);
+
     for (let i = 0; i < limit; i++) {
         const r = results[i];
-        // הוספת המפריד .t- לפני כל תוצאה
-        responseText += `.t-תוצאה מספר ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} מספר טלפון נייד ${r[5]} מספר טלפון בבית ${r[6]}`;
+        // בניית תוצאה כטקסט רציף ללא סימני פיסוק ששוברים את הקוד
+        const content = `תוצאה מספר ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} נייד ${r[5]} בית ${r[6]}. `;
+        fullMessage += content;
     }
 
-    // הרכבת התשובה הסופית: התחלה ב-id_list_message=t-, המחרוזת שבנינו, ובסוף &
-    const finalResponse = "id_list_message=t-" + responseText + "&";
+    // ניקוי תווים אסורים והרכבת התשובה הסופית
+    const cleanMsg = fullMessage.replace(/[&?=]/g, " ");
+    const finalResponse = "id_list_message=t-" + cleanMsg + "&";
 
     res.set('Content-Type', 'text/plain; charset=utf-8');
     res.send(finalResponse);
