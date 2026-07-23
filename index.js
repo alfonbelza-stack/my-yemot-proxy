@@ -39,17 +39,14 @@ app.get('/', (req, res) => {
         return res.send("id_list_message=t-לא נמצאו תוצאות תואמות");
     }
 
-    // הודעת פתיחה
-    let msg = `נמצאו ${results.length} תוצאות `;
+    // מערך שיכיל את כל חלקי ההודעה
+    let messages = [];
     
-    // הגבלנו ל-10 תוצאות כדי למנוע קריסה של השיחה וניתוק
-    const limit = Math.min(results.length, 10);
-    if (results.length > 10) {
-        msg += `המערכת תקריא את עשר הראשונות `;
-    }
+    // הודעת פתיחה
+    messages.push(`t-נמצאו ${results.length} תוצאות`);
 
-    for (let i = 0; i < limit; i++) {
-        const r = results[i];
+    // מעבר על כל התוצאות (ללא הגבלה)
+    results.forEach((r, i) => {
         const title = r[0] || "";
         const name = r[1] || "";
         const son = r[2] || "";
@@ -58,12 +55,20 @@ app.get('/', (req, res) => {
         const mobile = r[5] || "";
         const home = r[6] || "";
 
-        // הוספת רווח בסוף כל הודעה (&t-) כדי שהמערכת תעבור חלק
-        msg += `&t-תוצאה ${i+1} ${title} ${name} בן הרב ${son} חתן ${law} כתובת ${address} מספר טלפון נייד ${mobile} מספר טלפון בבית ${home} `;
-    }
+        // בניית תוכן התוצאה
+        let content = `תוצאה ${i+1} ${title} ${name} בן הרב ${son} חתן ${law} כתובת ${address} מספר טלפון נייד ${mobile} מספר טלפון בבית ${home}`;
+        
+        // ניקוי תווים מיוחדים שעלולים לשבש את הפורמט
+        content = content.replace(/[&?=]/g, " ");
+        
+        messages.push(`t-${content}`);
+    });
+
+    // חיבור כל ההודעות עם & ביניהן
+    const finalResponse = "id_list_message=" + messages.join("&");
 
     res.set('Content-Type', 'text/plain; charset=utf-8');
-    res.send("id_list_message=t-" + msg);
+    res.send(finalResponse);
 });
 
 const PORT = process.env.PORT || 3000;
