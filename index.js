@@ -28,12 +28,10 @@ app.get('/', (req, res) => {
     const query = (req.query.query || "").trim().toLowerCase();
     if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש");
 
-    // פירוק שאילתת החיפוש למילים (לחיפוש גמיש כמו ב-HTML)
     const queryWords = query.split(/\s+/).filter(w => w.length > 0);
 
     const results = cachedData.filter(row => {
         const rowText = row.join(' ').toLowerCase();
-        // בדיקה שכל מילת חיפוש קיימת בשורה (לא משנה הסדר)
         return queryWords.every(word => rowText.includes(word));
     });
 
@@ -44,10 +42,12 @@ app.get('/', (req, res) => {
     // הודעת פתיחה
     let msg = `נמצאו ${results.length} תוצאות `;
     
-    // בניית רצף הודעות: כל תוצאה מופרדת ב-&t-
-    // הגבלתי ל-20 תוצאות כדי לא להתיש את המאזין, אפשר להגדיל אם תרצה
-    const limit = Math.min(results.length, 20);
-    
+    // הגבלנו ל-10 תוצאות כדי למנוע קריסה של השיחה וניתוק
+    const limit = Math.min(results.length, 10);
+    if (results.length > 10) {
+        msg += `המערכת תקריא את עשר הראשונות `;
+    }
+
     for (let i = 0; i < limit; i++) {
         const r = results[i];
         const title = r[0] || "";
@@ -58,8 +58,8 @@ app.get('/', (req, res) => {
         const mobile = r[5] || "";
         const home = r[6] || "";
 
-        // בניית הטקסט ללא נקודות, עם הפרדה של &t-
-        msg += `&t-תוצאה ${i+1} ${title} ${name} בן הרב ${son} חתן ${law} כתובת ${address} מספר טלפון נייד ${mobile} מספר טלפון בבית ${home}`;
+        // הוספת רווח בסוף כל הודעה (&t-) כדי שהמערכת תעבור חלק
+        msg += `&t-תוצאה ${i+1} ${title} ${name} בן הרב ${son} חתן ${law} כתובת ${address} מספר טלפון נייד ${mobile} מספר טלפון בבית ${home} `;
     }
 
     res.set('Content-Type', 'text/plain; charset=utf-8');
@@ -67,4 +67,4 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server is running`));
+app.listen(PORT, () => console.log(`Server running`));
