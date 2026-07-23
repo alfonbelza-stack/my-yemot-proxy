@@ -15,9 +15,8 @@ async function refreshData() {
             return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(col => col.replace(/"/g, '').trim());
         });
         cachedData = rows.slice(1); 
-        console.log(`הנתונים עודכנו: ${cachedData.length} שורות.`);
     } catch (error) {
-        console.error("שגיאה במשיכת הנתונים:", error.message);
+        console.error("Error:", error.message);
     }
 }
 
@@ -26,46 +25,28 @@ setInterval(refreshData, 10 * 60 * 1000);
 
 app.get('/', (req, res) => {
     const query = (req.query.query || "").trim().toLowerCase();
-    if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש");
+    if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש&");
 
     const queryWords = query.split(/\s+/).filter(w => w.length > 0);
-
     const results = cachedData.filter(row => {
         const rowText = row.join(' ').toLowerCase();
         return queryWords.every(word => rowText.includes(word));
     });
 
-    if (results.length === 0) {
-        return res.send("id_list_message=t-לא נמצאו תוצאות תואמות");
+    if (results.length === 0) return res.send("id_list_message=t-לא נמצאו תוצאות&");
+
+    // התחלת בניית המחרוזת בדיוק לפי הפורמט שלך
+    let responseText = `נמצאו ${results.length} תוצאות`;
+
+    const limit = Math.min(results.length, 10); 
+    for (let i = 0; i < limit; i++) {
+        const r = results[i];
+        // הוספת המפריד .t- לפני כל תוצאה
+        responseText += `.t-תוצאה מספר ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} מספר טלפון נייד ${r[5]} מספר טלפון בבית ${r[6]}`;
     }
 
-    // מערך שיכיל את כל חלקי ההודעה
-    let messages = [];
-    
-    // הודעת פתיחה
-    messages.push(`t-נמצאו ${results.length} תוצאות`);
-
-    // מעבר על כל התוצאות (ללא הגבלה)
-    results.forEach((r, i) => {
-        const title = r[0] || "";
-        const name = r[1] || "";
-        const son = r[2] || "";
-        const law = r[3] || "";
-        const address = r[4] || "";
-        const mobile = r[5] || "";
-        const home = r[6] || "";
-
-        // בניית תוכן התוצאה
-        let content = `תוצאה ${i+1} ${title} ${name} בן הרב ${son} חתן ${law} כתובת ${address} מספר טלפון נייד ${mobile} מספר טלפון בבית ${home}`;
-        
-        // ניקוי תווים מיוחדים שעלולים לשבש את הפורמט
-        content = content.replace(/[&?=]/g, " ");
-        
-        messages.push(`t-${content}`);
-    });
-
-    // חיבור כל ההודעות עם & ביניהן
-    const finalResponse = "id_list_message=" + messages.join("&");
+    // הרכבת התשובה הסופית: התחלה ב-id_list_message=t-, המחרוזת שבנינו, ובסוף &
+    const finalResponse = "id_list_message=t-" + responseText + "&";
 
     res.set('Content-Type', 'text/plain; charset=utf-8');
     res.send(finalResponse);
