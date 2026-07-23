@@ -36,7 +36,7 @@ app.get('/', (req, res) => {
     if (results.length === 0) return res.send("id_list_message=t-לא נמצאו תוצאות&");
 
     // התחלת בניית הודעה אחת גדולה
-    let fullMessage = `נמצאו ${results.length} תוצאות. `;
+    let fullMessage = `נמצאו ${results.length} תוצאות `;
 
     // הגבלה ל-15 תוצאות כדי שההודעה לא תהיה ארוכה מדי ותיקטע על ידי המערכת
     const limit = Math.min(results.length, 15);
