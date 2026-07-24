@@ -2,8 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-const SHEET_ID = "1aftoVF8eL2yXLITdXr2D3MKksZgJbBeXMPVgBgaxcZk";
-const SHEET_NAME = encodeURIComponent("וחי אחיך ל HTML");
+const SHEET_ID = "1PCTlaPmhYyDwtwGWEJ0hHBkFh-VDvyaLvZMs2La6_2E";
+const SHEET_NAME = encodeURIComponent("אלפון בעלזא");
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
 
 let cachedData = []; 
