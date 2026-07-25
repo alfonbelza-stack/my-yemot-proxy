@@ -44,7 +44,13 @@ app.get('/', (req, res) => {
         // הגדרת עמודות החיפוש לפי הפרמטר action
         switch(action) {
             case 'name':
-                textToSearch = `${row[0]} ${row[1]}`; // עמודות שם פרטי ומשפחה
+                textToSearch = row[1] || ""; // עמודות שם פרטי ומשפחה
+                break;
+            case 'father':
+                textToSearch = row[2] || ""; // עמודה 3 - שם האב
+                break;
+            case 'hotan':
+                textToSearch = row[3] || ""; // עמודה 4 - שם החותן
                 break;
             case 'address':
                 textToSearch = row[4] || ""; // עמודת כתובת
