@@ -2,61 +2,62 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-// משיכת הקישור מהגדרות Render - זה שומר על הפרטיות ב-GitHub
+// משיכת הקישור אך ורק ממשתני הסביבה של Render
+// אם המשתנה לא מוגדר, השרת לא ינסה להתחבר לקישור ברירת מחדל
 const CSV_URL = process.env.SHEET_CSV_URL;
 
 let cachedData = []; 
 
 async function refreshData() {
     if (!CSV_URL) {
-        console.error("Error: SHEET_CSV_URL is not defined in Render Environment Variables");
+        console.error("CRITICAL ERROR: SHEET_CSV_URL is not defined in Render Environment Variables.");
         return;
     }
     try {
         const response = await axios.get(CSV_URL);
         const rows = response.data.split('\n').map(row => {
-            // פיצול לפי פסיקים תוך התעלמות מפסיקים בתוך מרכאות
             return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(col => col.replace(/"/g, '').trim());
         });
         cachedData = rows.slice(1); 
+        console.log(`Data successfully loaded. Total rows: ${cachedData.length}`);
     } catch (error) {
-        console.error("Error fetching data:", error.message);
+        console.error("Error fetching data from Google Sheets:", error.message);
     }
 }
 
-// טעינה ראשונית ורענון כל 10 דקות
+// הפעלת טעינה ראשונית ורענון כל 10 דקות
 refreshData();
 setInterval(refreshData, 10 * 60 * 1000);
 
 app.get('/', (req, res) => {
     const query = (req.query.query || "").trim().toLowerCase();
-    const action = (req.query.action || "total").trim().toLowerCase(); // הוספת אפשרות לסינון לפי סוג
+    const action = (req.query.action || "total").trim().toLowerCase();
 
     if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש&");
+    if (cachedData.length === 0) return res.send("id_list_message=t-שגיאה בטעינת הנתונים מהשרת&");
 
     const queryWords = query.split(/\s+/).filter(w => w.length > 0);
 
     const results = cachedData.filter(row => {
         let textToSearch = "";
 
-        // הגדרת עמודות החיפוש לפי הפרמטר action שביקשת
+        // הגדרת עמודות החיפוש לפי הפרמטר action
         switch(action) {
             case 'name':
-                textToSearch = `${row[0]} ${row[1]}`; // שם פרטי + משפחה
+                textToSearch = `${row[0]} ${row[1]}`; // עמודות שם פרטי ומשפחה
                 break;
             case 'address':
-                textToSearch = row[4] || ""; // כתובת (עמודה 5)
+                textToSearch = row[4] || ""; // עמודת כתובת
                 break;
             case 'phone':
-                textToSearch = `${row[5]} ${row[6]}`; // טלפונים (עמודות 6 ו-7)
+                textToSearch = `${row[5]} ${row[6]}`; // עמודות טלפון
                 break;
             case 'total':
             default:
-                textToSearch = row.join(' '); // חיפוש בכל העמודות
+                textToSearch = row.join(' '); // חיפוש בכל הגיליון
         }
 
         textToSearch = textToSearch.toLowerCase();
-        // בדיקה שכל מילות החיפוש קיימות בטקסט (חיפוש לא מדויק)
         return queryWords.every(word => textToSearch.includes(word));
     });
 
@@ -79,4 +80,4 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running`));
