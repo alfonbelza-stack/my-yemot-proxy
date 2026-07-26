@@ -67,7 +67,7 @@ app.get('/', (req, res) => {
     if (results.length === 0) return res.send("id_list_message=t-לא נמצאו תוצאות&");
 
     let resultsCount = results.length;
-    let fullMessage = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות. מושמעות עשר הראשונות ` : `נמצאו ${resultsCount} תוצאות `;
+    let fullMessage = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות עשר הראשונות ` : `נמצאו ${resultsCount} תוצאות `;
     
     const limit = Math.min(resultsCount, 10);
     for (let i = 0; i < limit; i++) {
