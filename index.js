@@ -8,7 +8,7 @@ const CSV_URL = process.env.SHEET_CSV_URL;
 const ALLOWED_DIDS = {
     "0747095686": "מערכת קבוצה",
     "0774948667": "מערכת סיוע",
-    "025544332": "מערכת אלפון בעלזא"
+    "0733582356": "מערכת אלפון בעלזא"
 };
 
 let cachedData = []; 
