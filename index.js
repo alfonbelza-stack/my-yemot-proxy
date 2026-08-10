@@ -75,7 +75,7 @@ app.get('/', (req, res) => {
         fullMessage += `תוצאה ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} מספר טלפון נייד ${r[5]} מספר טלפון בבית ${r[6]} `;
     }
 
-    const cleanMsg = fullMessage.replace(/[&?=]/g, " ");
+    const cleanMsg = fullMessage.replace(/[&?=]/g, " &t-");
     res.set('Content-Type', 'text/plain; charset=utf-8');
     res.send("id_list_message=t-" + cleanMsg + "&");
 });
