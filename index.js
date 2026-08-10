@@ -67,12 +67,12 @@ app.get('/', (req, res) => {
     if (results.length === 0) return res.send("id_list_message=t-לא נמצאו תוצאות&");
 
     let resultsCount = results.length;
-    let fullMessage = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות עשר הראשונות ` : `נמצאו ${resultsCount} תוצאות `;
+    let fullMessage = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות רק הראשונות ` : `נמצאו ${resultsCount} תוצאות `;
     
     const limit = Math.min(resultsCount, 10);
     for (let i = 0; i < limit; i++) {
         const r = results[i];
-        fullMessage += `t-תוצאה ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} מספר טלפון נייד ${r[5]} מספר טלפון בבית ${r[6]} &`;
+        fullMessage += `תוצאה מספר ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} מספר טלפון נייד ${r[5]} מספר טלפון בבית ${r[6]} `;
     }
 
     const cleanMsg = fullMessage.replace(/[&?=]/g, " ");
