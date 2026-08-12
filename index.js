@@ -1,14 +1,11 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-
 const CSV_URL = process.env.SHEET_CSV_URL;
 
 // רשימת מספרי המערכת המורשים (ה-DID של המערכות שלך)
 const ALLOWED_DIDS = {
     "0747095686": "מערכת קבוצה",
-    "0774948667": "מערכת סיוע",
-    "0733582356": "מערכת אלפון בעלזא"
 };
 
 let cachedData = []; 
@@ -37,7 +34,6 @@ app.get('/', (req, res) => {
     if (!incomingDID || !ALLOWED_DIDS[incomingDID]) {
         console.warn(`Unauthorized access attempt from DID: ${incomingDID}`);
         res.set('Content-Type', 'text/plain; charset=utf-8');
-        // הודעת השגיאה שביקשת
         return res.send("id_list_message=t-המערכת נבנתה שלא כדין נא פנה למנהל המערכת&");
     }
 
@@ -50,6 +46,7 @@ app.get('/', (req, res) => {
     if (!query) return res.send("id_list_message=t-נא להקיש ערך לחיפוש&");
 
     const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+
     const results = cachedData.filter(row => {
         let textToSearch = "";
         switch(action) {
@@ -67,17 +64,38 @@ app.get('/', (req, res) => {
     if (results.length === 0) return res.send("id_list_message=t-לא נמצאו תוצאות&");
 
     let resultsCount = results.length;
-    let fullMessage = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות רק הראשונות ` : `נמצאו ${resultsCount} תוצאות `;
     
+    // פונקציה לניקוי תווים לא רצויים מהטקסט (כולל נקודה ומקף)
+    const clean = (text) => (text || "").replace(/[&?=\.\-]/g, " ").trim();
+
+    // בניית הודעת הפתיחה
+    let introText = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות רק הראשונות` : `נמצאו ${resultsCount} תוצאות`;
+    let fullMessage = "t-" + introText + ".";
+
     const limit = Math.min(resultsCount, 10);
     for (let i = 0; i < limit; i++) {
         const r = results[i];
-        fullMessage += `תוצאה מספר ${i+1} ${r[0]} ${r[1]} בן הרב ${r[2]} חתן ${r[3]} כתובת ${r[4]} מספר טלפון נייד ${r[5]} מספר טלפון בבית ${r[6]} `;
+        
+        // ניקוי כל השדות
+        const fName = clean(r[0]);
+        const lName = clean(r[1]);
+        const father = clean(r[2]);
+        const hotan = clean(r[3]);
+        const addr = clean(r[4]);
+        const mob = clean(r[5]);
+        const home = clean(r[6]);
+        
+        const resultLine = `תוצאה ${i+1} ${fName} ${lName} בן הרב ${father} חתן ${hotan} כתובת ${addr} מספר טלפון נייד ${mob} מספר טלפון בבית ${home}`;
+        
+        // הוספת t- לפני כל תוצאה ונקודה בסוף
+        fullMessage += "t-" + resultLine + ".";
     }
 
-    const cleanMsg = fullMessage.replace(/[&?=]/g, " ");
+    // הוספת & בסוף כל המחרוזת
+    fullMessage += "&";
+
     res.set('Content-Type', 'text/plain; charset=utf-8');
-    res.send("id_list_message=t-" + cleanMsg + "&");
+    res.send("id_list_message=" + fullMessage);
 });
 
 const PORT = process.env.PORT || 3000;
