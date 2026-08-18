@@ -69,10 +69,10 @@ app.get('/', (req, res) => {
     const clean = (text) => (text || "").replace(/[&?=\.\-]/g, " ").trim();
 
     // בניית הודעת הפתיחה
-    let introText = resultsCount > 100 ? `נמצאו ${resultsCount} תוצאות מושמעות רק הראשונות` : `נמצאו ${resultsCount} תוצאות`;
+    let introText = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות רק הראשונות` : `נמצאו ${resultsCount} תוצאות`;
     let fullMessage = "t-" + introText + ".";
 
-    const limit = Math.min(resultsCount, 100);
+    const limit = Math.min(resultsCount, 10);
     for (let i = 0; i < limit; i++) {
         const r = results[i];
         
