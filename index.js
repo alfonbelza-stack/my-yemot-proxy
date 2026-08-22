@@ -72,10 +72,10 @@ app.get('/', (req, res) => {
     let resultsCount = results.length;
     
     // הודעת פתיחה
-    let introText = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות עשר הראשונות` : `נמצאו ${resultsCount} תוצאות`;
+    let introText = resultsCount > 20 ? `נמצאו ${resultsCount} תוצאות מושמעות רק עשרים הראשונות` : `נמצאו ${resultsCount} תוצאות`;
     let fullMessage = "t-" + introText + ".";
 
-    const limit = Math.min(resultsCount, 10);
+    const limit = Math.min(resultsCount, 20);
     for (let i = 0; i < limit; i++) {
         const r = results[i];
         
