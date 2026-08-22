@@ -6,6 +6,8 @@ const CSV_URL = process.env.SHEET_CSV_URL;
 // רשימת מספרי המערכת המורשים (ה-DID של המערכות שלך)
 const ALLOWED_DIDS = {
     "0747095686": "מערכת קבוצה",
+    "0774948667": "מערכת סיוע",
+    "0733582356": "מערכת אלפון בעלזא"
 };
 
 let cachedData = []; 
@@ -25,6 +27,12 @@ async function refreshData() {
 
 refreshData();
 setInterval(refreshData, 10 * 60 * 1000);
+
+// פונקציה לניקוי טקסט כללי (הסרת תווים שמשבשים פורמט)
+const clean = (text) => (text || "").replace(/[&?=\.\-]/g, " ").trim();
+
+// פונקציה לניקוי מספר טלפון (משאירה רק ספרות עבור f-)
+const cleanPhone = (text) => (text || "").replace(/\D/g, "");
 
 app.get('/', (req, res) => {
     // שליפת מספר המערכת שממנו הגיעה השיחה
@@ -65,33 +73,35 @@ app.get('/', (req, res) => {
 
     let resultsCount = results.length;
     
-    // פונקציה לניקוי תווים לא רצויים מהטקסט (כולל נקודה ומקף)
-    const clean = (text) => (text || "").replace(/[&?=\.\-]/g, " ").trim();
-
-    // בניית הודעת הפתיחה
-    let introText = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות רק הראשונות` : `נמצאו ${resultsCount} תוצאות`;
+    // הודעת פתיחה
+    let introText = resultsCount > 10 ? `נמצאו ${resultsCount} תוצאות מושמעות עשר הראשונות` : `נמצאו ${resultsCount} תוצאות`;
     let fullMessage = "t-" + introText + ".";
 
     const limit = Math.min(resultsCount, 10);
     for (let i = 0; i < limit; i++) {
         const r = results[i];
         
-        // ניקוי כל השדות
         const fName = clean(r[0]);
         const lName = clean(r[1]);
         const father = clean(r[2]);
         const hotan = clean(r[3]);
         const addr = clean(r[4]);
-        const mob = clean(r[5]);
-        const home = clean(r[6]);
         
-        const resultLine = `תוצאה ${i+1} ${fName} ${lName} בן הרב ${father} חתן ${hotan} כתובת ${addr} מספר טלפון נייד ${mob} מספר טלפון בבית ${home}`;
+        // ניקוי מספרי הטלפון לספרות בלבד
+        const mob = cleanPhone(r[5]);
+        const home = cleanPhone(r[6]);
         
-        // הוספת t- לפני כל תוצאה ונקודה בסוף
-        fullMessage += "t-" + resultLine + ".";
+        // בניית התוצאה עם הפרדה ל-t עבור טקסט ו-f עבור מספר טלפון
+        // כל חלק מסתיים בנקודה (.) כדי להפריד בין ההודעות בשרשור
+        let resultLine = `t-תוצאה ${i+1} ${fName} ${lName} בן הרב ${father} חתן ${hotan} כתובת ${addr} מספר טלפון נייד.`;
+        resultLine += `d-${mob}.`;
+        resultLine += `t-מספר טלפון בבית.`;
+        resultLine += `d-${home}.`;
+        
+        fullMessage += resultLine;
     }
 
-    // הוספת & בסוף כל המחרוזת
+    // סיום המחרוזת ב-&
     fullMessage += "&";
 
     res.set('Content-Type', 'text/plain; charset=utf-8');
