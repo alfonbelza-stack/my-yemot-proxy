@@ -234,4 +234,138 @@ app.get('/access-check', (req, res) => {
 
     return res.send(accessGranted ? "OK" : "NO");
 });
+
+// ============================================================
+// הרשמה חדשה לגיליון נרשמים
+// ============================================================
+
+const REGISTRATION_WRITE_URL =
+    process.env.REGISTRATION_WRITE_URL;
+
+app.get('/register', async (req, res) => {
+    res.set('Content-Type', 'text/plain; charset=utf-8');
+
+    const incomingDID =
+        (req.query.ApiDID || '').trim();
+
+    const apiPhone =
+        (req.query.ApiPhone || '').trim();
+
+    const apiExtension =
+        (req.query.ApiExtension || '').trim();
+
+    const name =
+        (req.query.name || '').trim();
+
+    const ben =
+        (req.query.ben || '').trim();
+
+    const hatan =
+        (req.query.hatan || '').trim();
+
+    const address =
+        (req.query.address || '').trim();
+
+    const mobile =
+        (req.query.mobile || '').trim();
+
+    const home =
+        (req.query.home || '').trim();
+
+    const email =
+        (req.query.email || '').trim();
+
+    const status =
+        (req.query.status || '').trim();
+
+    const allowedStatuses = [
+        'הרשמה',
+        'הוספת שם חדש'
+    ];
+
+    if (!incomingDID || !ALLOWED_DIDS[incomingDID]) {
+        console.warn(
+            `Unauthorized registration attempt from DID: ${incomingDID}`
+        );
+
+        return res.send('NO');
+    }
+
+    if (!apiPhone) {
+        console.warn(
+            'Registration request received without ApiPhone'
+        );
+
+        return res.send('NO');
+    }
+
+    if (!allowedStatuses.includes(status)) {
+        console.warn(
+            `Invalid registration status: ${status}`
+        );
+
+        return res.send('NO');
+    }
+
+    if (!REGISTRATION_WRITE_URL) {
+        console.error(
+            'REGISTRATION_WRITE_URL is not configured'
+        );
+
+        return res.send('NO');
+    }
+
+    const registrationData = {
+        ApiDID: incomingDID,
+        ApiPhone: apiPhone,
+        ApiExtension: apiExtension,
+        name: name,
+        ben: ben,
+        hatan: hatan,
+        address: address,
+        mobile: mobile,
+        home: home,
+        email: email,
+        status: status
+    };
+
+    try {
+        const response = await axios.post(
+            REGISTRATION_WRITE_URL,
+            registrationData,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 15000
+            }
+        );
+
+        if (
+            response.data === 'OK' ||
+            response.data?.status === 'OK'
+        ) {
+            console.log(
+                `Registration saved successfully: ${apiPhone}`
+            );
+
+            return res.send('OK');
+        }
+
+        console.error(
+            'Registration script returned unexpected response:',
+            response.data
+        );
+
+        return res.send('NO');
+
+    } catch (error) {
+        console.error(
+            'Error sending registration to Google Script:',
+            error.message
+        );
+
+        return res.send('NO');
+    }
+});
 app.listen(PORT, () => console.log(`Server running`));
